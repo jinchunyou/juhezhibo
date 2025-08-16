@@ -1,12 +1,16 @@
-name: Simple Build
+cat > .github/workflows/build.yml <<'YAML'
+name: simple-build
 
 on:
   workflow_dispatch:   # 手动触发
+  push:
+    branches:
+      - master
+      - ci-fix
 
 jobs:
   build-android:
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -20,17 +24,21 @@ jobs:
           flutter-version: '3.22.x'
 
       - name: Get packages
-        run: |
-          cd simple_live_app
-          flutter pub get
+        working-directory: simple_live_app
+        run: flutter pub get
 
-      - name: Build APK
-        run: |
-          cd simple_live_app
-          flutter build apk --release
+      - name: Build release APK (unsigned)
+        working-directory: simple_live_app
+        run: flutter build apk --release
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: simple_live_app/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+YAML
+
+git add .github/workflows/build.yml
+git commit -m "ci: simple android build with artifact"
+git push origin ci-fix
